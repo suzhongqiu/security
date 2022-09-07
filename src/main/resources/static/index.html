@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vue基础</title>
+</head>
+<body>
+<!--<div id="app">-->
+<!--    <span v-bind:title="message">鼠标悬浮</span>-->
+<!--</div>-->
+<div id="main" style="width: 968px;height: 485px;"></div>
+<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+<script src="js/echarts.js"></script>
+<script src="js/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script type="text/javascript">
+    var myvue = new Vue({
+        el: "#main",
+        data: {
+             data:[]
+        },
+        watch:{
+          data(val){
+              this.draw(val);
+          }
+        },
+        // computed:{
+        //     data_t:function(){
+        //         this.draw(this.data);
+        //     }
+        // },
+        methods: {
+            draw(val){
+                let myChart = echarts.init(document.getElementById('main'));
+                const option = {
+                    tooltip: {
+                        trigger: 'axis',
+                        position: function (pt) {
+                            return [pt[0], '50%'];
+                        },
+                        // formatter(params){
+                        //     const item = params[0];
+                        //     return '${item.data.day}:${item.data.value}'
+                        // }
+                    },
+                    title: {
+                        left: 'center',
+                        text: 'Large Ara Chart'
+                    },
+                    toolbox: {
+                        feature: {
+                            dataZoom: {
+                                yAxisIndex: 'none'
+                            },
+                            restore: {},
+                            saveAsImage: {}
+                        }
+                    },
+                    xAxis: {
+                        type: 'time',
+                        boundaryGap: false
+                    },
+                    yAxis: {
+                        type: 'value',
+                        boundaryGap: [0, '100%'],
+                        min: (value) => {
+                            return value.min -0.2
+                        },
+                        max: (value) => {
+                            return value.max + 0.2
+                        }
+                    },
+                    dataZoom: [
+                        {
+                            type: 'inside',
+                            start: 90,
+                            end: 100
+                        },
+                        {
+                            start: 80,
+                            end: 100
+                        }
+                    ],
+                    series: [
+                        {
+                            name: 'Fake Data',
+                            type: 'line',
+                            smooth: true,
+                            symbol: 'none',
+                            lineStyle: {width:2},
+                            areaStyle: {opacity:0},
+                            data: val
+                        }
+                    ]
+                };
+                myChart.setOption(option);
+            },
+            // let base = +new Date(1988, 9, 3);
+            // let oneDay = 24 * 3600 * 1000;
+            // // let data = [[base, Math.random() * 300]];
+            // let data = [[base, Math.random()]];
+            // for (let i = 1; i < 20000; i++) {
+            //     let now = new Date((base += oneDay));
+            //     data.push([+now, Math.round((Math.random() - 0.5) * 20 + data[i - 1][1])]);
+            // }
+            // this.data = data
+            // console.log(this.data)
+            initChart: function () {
+                let that = this
+                $.ajax({
+                    url: "usEconomic/get10Minus2YearRates",
+                    type: "get",
+                    success: function (res) {
+                        console.log(res)
+                        if(res.responseCode == 200) {
+                            if(res.result != null) {
+                                let rowDataList = res.result
+                                let myData = []
+                                for (let rowData of rowDataList) {
+                                    let str = rowData.date;
+                                    str = str.replace("/-/g","/")
+                                    date = new Date(str)
+                                    myData.push([+date, rowData.percent])
+                                }
+                                that.data = myData
+                                console.log(that.data)
+                            }
+                        }
+                    }
+                })
+                // const option = {
+                //     tooltip: {
+                //         trigger: 'axis',
+                //         position: function (pt) {
+                //             return [pt[0], '10%'];
+                //         }
+                //     },
+                //     title: {
+                //         left: 'center',
+                //         text: 'Large Ara Chart'
+                //     },
+                //     toolbox: {
+                //         feature: {
+                //             dataZoom: {
+                //                 yAxisIndex: 'none'
+                //             },
+                //             restore: {},
+                //             saveAsImage: {}
+                //         }
+                //     },
+                //     xAxis: {
+                //         type: 'time',
+                //         boundaryGap: false
+                //     },
+                //     yAxis: {
+                //         type: 'value',
+                //         boundaryGap: [0, '100%']
+                //     },
+                //     dataZoom: [
+                //         {
+                //             type: 'inside',
+                //             start: 0,
+                //             end: 20
+                //         },
+                //         {
+                //             start: 0,
+                //             end: 20
+                //         }
+                //     ],
+                //     series: [
+                //         {
+                //             name: 'Fake Data',
+                //             type: 'line',
+                //             smooth: true,
+                //             symbol: 'none',
+                //             areaStyle: {},
+                //             data: this.data
+                //         }
+                //     ]
+                // };
+                // myChart.setOption(option);
+            }
+        },
+        mounted:function () {
+          this.$nextTick(function (){
+              this.initChart()
+          })
+        }
+    })
+
+</script>
+
+</body>
+</html>

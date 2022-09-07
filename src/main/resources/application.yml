@@ -1,0 +1,17 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /SecurityAnalysis
+
+spring:
+  resources:
+    static-locations: classpath:static
+  data:
+    mongodb:
+      #主机地址
+#      host: 127.0.0.1
+#      #数据库
+#      database: articleDb
+#      port: 27017
+      #或者uri访问
+      uri: mongodb://localhost:27017/security

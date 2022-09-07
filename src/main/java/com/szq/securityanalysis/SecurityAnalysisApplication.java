@@ -3,6 +3,9 @@ package com.szq.securityanalysis;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+/**
+ * @author szq
+ */
 @SpringBootApplication
 public class SecurityAnalysisApplication {
 

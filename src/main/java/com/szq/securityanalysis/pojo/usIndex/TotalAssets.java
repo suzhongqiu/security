@@ -12,16 +12,17 @@ import java.util.Date;
 /**
  * @Author szq
  * @Description TODO
- * @Date 2022/9/7 22:40
+ * @Date 2022/9/13 22:21
  * @Version 1.0.0
  */
-@Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Document(collection = "TwoYearTreasure")
-public class TwoYearTreasure {
+@Data
+@Document(collection = "TotalAssets")
+public class TotalAssets {
+
     @JsonFormat(pattern = Constant.NORMAL_DATE_FORMAT, timezone = "UTC+8")
     private Date date;
 
-    private Double percent;
+    private Integer value;
 }

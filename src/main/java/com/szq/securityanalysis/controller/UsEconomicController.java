@@ -5,7 +5,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.szq.securityanalysis.common.constant.Constant;
 import com.szq.securityanalysis.common.response.RequestResult;
 import com.szq.securityanalysis.common.response.ResponseCode;
-import com.szq.securityanalysis.pojo.usIndex.TenYearTreasureMinus2Year;
 import com.szq.securityanalysis.service.crawData.UsCrawDataService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -23,7 +22,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -85,10 +83,10 @@ public class UsEconomicController {
 
 
     @GetMapping("/get10Minus2YearRates")
-    @ApiOperation("获得十年期和两年期国债收益率差值")
+    @ApiOperation("获得十年期和两年期国债收益率差值以及十年期和两年期国债")
     public RequestResult get10Minus2YearRates(){
         try {
-            List<TenYearTreasureMinus2Year> tenYearTreasureMinus2Years = usCrawDataService.queryAllTenYearTreasureMinus2();
+            JSONObject tenYearTreasureMinus2Years = usCrawDataService.queryAllTenYearTreasureMinus2();
             return new RequestResult(ResponseCode.OK, tenYearTreasureMinus2Years, "success");
         } catch (Exception e) {
             e.printStackTrace();
@@ -131,6 +129,88 @@ public class UsEconomicController {
             }
             //System.out.println(usefulJson.toString());
             usCrawDataService.saveTenYearTreasure(dataMap);
+            return new RequestResult(ResponseCode.OK, null, "success");
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new RequestResult(ResponseCode.INTERNAL_ERROR, null, e.getMessage());
+        }
+    }
+
+    @GetMapping("/save2YearTreasure")
+    @ApiOperation("爬取2年期国债收益率")
+    public RequestResult save2YearTreasure(){
+        try {
+            String url = Constant.TWO_YEAR_TREASURE_URL;
+            String paraStr = Constant.TWO_YEAR_TREASURE_PARAM;
+            Connection connection = Jsoup.connect(url).ignoreHttpErrors(true).ignoreContentType(true)
+                    .header("Content-Type", "application/json; charset=UTF-8");
+            connection.header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36");
+            connection.requestBody(paraStr);
+            Document document = connection.post();
+            Element body = document.body();
+            String bodyString = body.toString();
+            String usefulString = bodyString.replace("<body>","").replace("</body>", "").replace("\n","");
+            JSONObject usefulJson = JSONObject.parseObject(usefulString);
+            JSONArray realData = usefulJson.getJSONArray("observations");
+            Map<Date, Double> dataMap = new LinkedHashMap<>(realData.size());
+            for (Object realDatum : realData) {
+                JSONArray jsonData = (JSONArray) realDatum;
+                for (int i=0; i< jsonData.size(); i++) {
+                    JSONArray oneData = jsonData.getJSONArray(i);
+                    Long timeStamp = oneData.getLong(0);
+                    BigDecimal percent = oneData.getBigDecimal(1);
+                    // String dateStr = DateUtils.date2String(new Date(timeStamp), Constant.NORMAL_DATE_FORMAT);
+                    Date time = new Date(timeStamp);
+                    if(percent == null) {
+                        dataMap.put(time,  null);
+                    } else {
+                        dataMap.put(time,  percent.doubleValue());
+                    }
+                }
+            }
+            //System.out.println(usefulJson.toString());
+            usCrawDataService.saveTwoYearTreasure(dataMap);
+            return new RequestResult(ResponseCode.OK, null, "success");
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new RequestResult(ResponseCode.INTERNAL_ERROR, null, e.getMessage());
+        }
+    }
+
+    @GetMapping("/saveTotalAssets")
+    @ApiOperation("爬取美联储资产负债表")
+    public RequestResult saveTotalAssets(){
+        try {
+            String url = Constant.TOTAL_ASSETS_URL;
+            String paraStr = Constant.TOTAL_ASSETS_PARAM;
+            Connection connection = Jsoup.connect(url).ignoreHttpErrors(true).ignoreContentType(true)
+                    .header("Content-Type", "application/json; charset=UTF-8");
+            connection.header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36");
+            connection.requestBody(paraStr);
+            Document document = connection.post();
+            Element body = document.body();
+            String bodyString = body.toString();
+            String usefulString = bodyString.replace("<body>","").replace("</body>", "").replace("\n","");
+            JSONObject usefulJson = JSONObject.parseObject(usefulString);
+            JSONArray realData = usefulJson.getJSONArray("observations");
+            Map<Date, Integer> dataMap = new LinkedHashMap<>(realData.size());
+            for (Object realDatum : realData) {
+                JSONArray jsonData = (JSONArray) realDatum;
+                for (int i=0; i< jsonData.size(); i++) {
+                    JSONArray oneData = jsonData.getJSONArray(i);
+                    Long timeStamp = oneData.getLong(0);
+                    BigDecimal percent = oneData.getBigDecimal(1);
+                    // String dateStr = DateUtils.date2String(new Date(timeStamp), Constant.NORMAL_DATE_FORMAT);
+                    Date time = new Date(timeStamp);
+                    if(percent == null) {
+                        dataMap.put(time,  null);
+                    } else {
+                        dataMap.put(time,  percent.intValue());
+                    }
+                }
+            }
+            //System.out.println(usefulJson.toString());
+            usCrawDataService.saveTotalAssets(dataMap);
             return new RequestResult(ResponseCode.OK, null, "success");
         } catch (IOException e) {
             e.printStackTrace();

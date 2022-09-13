@@ -1,8 +1,11 @@
 package com.szq.securityanalysis.service.crawData.impl;
 
+import com.alibaba.fastjson.JSONObject;
 import com.mongodb.bulk.BulkWriteResult;
 import com.szq.securityanalysis.pojo.usIndex.TenYearTreasure;
 import com.szq.securityanalysis.pojo.usIndex.TenYearTreasureMinus2Year;
+import com.szq.securityanalysis.pojo.usIndex.TotalAssets;
+import com.szq.securityanalysis.pojo.usIndex.TwoYearTreasure;
 import com.szq.securityanalysis.service.crawData.UsCrawDataService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.BulkOperations;
@@ -74,9 +77,15 @@ public class UsCrawDataServiceImpl implements UsCrawDataService {
     // }
 
     @Override
-    public List<TenYearTreasureMinus2Year> queryAllTenYearTreasureMinus2(){
-        List<TenYearTreasureMinus2Year> allIndex = mongoTemplate.findAll(TenYearTreasureMinus2Year.class);
-        return allIndex;
+    public JSONObject queryAllTenYearTreasureMinus2(){
+        List<TenYearTreasureMinus2Year> minusIndex = mongoTemplate.findAll(TenYearTreasureMinus2Year.class);
+        List<TwoYearTreasure> twoYearIndex = mongoTemplate.findAll(TwoYearTreasure.class);
+        List<TenYearTreasure> tenYearIndex = mongoTemplate.findAll(TenYearTreasure.class);
+        JSONObject resJs = new JSONObject();
+        resJs.put("minusIndex", minusIndex);
+        resJs.put("twoYearIndex", twoYearIndex);
+        resJs.put("tenYearIndex", tenYearIndex);
+        return resJs;
     }
 
     @Override
@@ -89,14 +98,6 @@ public class UsCrawDataServiceImpl implements UsCrawDataService {
             insertList.add(temp);
         }
 
-        // Collection<TenYearTreasureMinus2Year> tenYearTreasureMinus2Years = mongoTemplate.insertAll(insertList);
-        // if(!insertList.isEmpty()) {
-        //     insertList.forEach(index -> {
-        //         Query query = new Query(Criteria.where("date").is(index.getDate()));
-        //         // TenYearTreasureMinus2Year old = mongoTemplate.findOne(query, TenYearTreasureMinus2Year.class, "percent");
-        //
-        //     });
-        // }
 
         List<Pair<Query, Update>> insertOrUpdateList = new ArrayList<>(insertList.size());
         insertList.forEach(index->{
@@ -109,6 +110,56 @@ public class UsCrawDataServiceImpl implements UsCrawDataService {
             insertOrUpdateList.add(updatePair);
         });
         BulkOperations operations = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, "TenYearTreasure").upsert(insertOrUpdateList);
+        BulkWriteResult re = operations.execute();
+    }
+
+    @Override
+    public void saveTwoYearTreasure(Map<Date, Double> rawDataMap) {
+        List<TwoYearTreasure> insertList = new ArrayList<>();
+        for (Map.Entry<Date, Double> entry: rawDataMap.entrySet()) {
+            TwoYearTreasure temp = new TwoYearTreasure();
+            temp.setDate(entry.getKey());
+            temp.setPercent(entry.getValue());
+            insertList.add(temp);
+        }
+
+
+        List<Pair<Query, Update>> insertOrUpdateList = new ArrayList<>(insertList.size());
+        insertList.forEach(index->{
+            Query query = new Query(Criteria.where("date").is(index.getDate()));
+            Update update = new Update();
+            update.set("date", index.getDate());
+            update.set("percent", index.getPercent());
+
+            Pair<Query, Update> updatePair = Pair.of(query, update);
+            insertOrUpdateList.add(updatePair);
+        });
+        BulkOperations operations = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, "TwoYearTreasure").upsert(insertOrUpdateList);
+        BulkWriteResult re = operations.execute();
+    }
+
+    @Override
+    public void saveTotalAssets(Map<Date, Integer> rawDataMap) {
+        List<TotalAssets> insertList = new ArrayList<>();
+        for (Map.Entry<Date, Integer> entry: rawDataMap.entrySet()) {
+            TotalAssets temp = new TotalAssets();
+            temp.setDate(entry.getKey());
+            temp.setValue(entry.getValue());
+            insertList.add(temp);
+        }
+
+
+        List<Pair<Query, Update>> insertOrUpdateList = new ArrayList<>(insertList.size());
+        insertList.forEach(index->{
+            Query query = new Query(Criteria.where("date").is(index.getDate()));
+            Update update = new Update();
+            update.set("date", index.getDate());
+            update.set("value", index.getValue());
+
+            Pair<Query, Update> updatePair = Pair.of(query, update);
+            insertOrUpdateList.add(updatePair);
+        });
+        BulkOperations operations = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, "TotalAssets").upsert(insertOrUpdateList);
         BulkWriteResult re = operations.execute();
     }
 }
